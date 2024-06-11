@@ -6,10 +6,31 @@ if (!isset($_SESSION['admin'])) {
 }
 include '../includes/db.php';
 
-$query = "SELECT * FROM students";
-$result = $conn->query($query);
+$search = '';
+if (isset($_GET['search'])) {
+    $search = $_GET['search'];
+}
 
-if (!$result) {
+// Ambil data siswa
+$query_students = "SELECT * FROM students WHERE name LIKE ?";
+$search_param = "%" . $search . "%";
+$stmt_students = $conn->prepare($query_students);
+$stmt_students->bind_param("s", $search_param);
+$stmt_students->execute();
+$result_students = $stmt_students->get_result();
+
+if (!$result_students) {
+    die("Query error: " . $conn->error);
+}
+
+// Ambil data pelatih
+$query_coaches = "SELECT * FROM coaches WHERE name LIKE ?";
+$stmt_coaches = $conn->prepare($query_coaches);
+$stmt_coaches->bind_param("s", $search_param);
+$stmt_coaches->execute();
+$result_coaches = $stmt_coaches->get_result();
+
+if (!$result_coaches) {
     die("Query error: " . $conn->error);
 }
 ?>
@@ -20,61 +41,18 @@ if (!$result) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script>
-        $(document).ready(function(){
-            $("#search").keyup(function(){
-                var searchText = $(this).val();
-                $.ajax({
-                    url: 'search.php',
-                    type: 'POST',
-                    data: {search: searchText},
-                    success: function(data){
-                        $("#table-body").html(data);
-                    }
-                });
-            });
-        });
-    </script>
-    <style>
-        /* Gaya Dark Mode */
-        body.dark-mode {
-            background-color: #121212;
-            color: #ffffff;
-        }
-        .dark-mode .table {
-            color: #ffffff;
-        }
-        .dark-mode .table th,
-        .dark-mode .table td {
-            border-color: #444444;
-        }
-    </style>
-    <script>
-        // Dark Mode Toggle
-        $(document).ready(function(){
-            $('.theme-switch input').on('change', function() {
-                if($(this).is(':checked')) {
-                    $('body').addClass('dark-mode');
-                } else {
-                    $('body').removeClass('dark-mode');
-                }
-            });
-        });
-    </script>
 </head>
 <body>
     <div class="container mt-5">
         <h2 class="text-center">Dashboard Admin</h2>
-        <div class="theme-switch-wrapper">
-            <label class="theme-switch">
-                <input type="checkbox">
-                <div class="slider round"></div>
-            </label>
-            <em>Dark Mode</em>
-        </div>
-        <a href="add.php" class="btn btn-success mb-3">Tambah Siswa</a>
-        <input type="text" id="search" class="form-control mb-3" placeholder="Cari Siswa...">
+        <form class="form-inline mb-3" method="GET" action="index.php">
+            <input class="form-control mr-sm-2" type="search" placeholder="Cari nama" aria-label="Search" name="search" value="<?php echo htmlspecialchars($search); ?>">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Cari</button>
+        </form>
+        <a href="add.php" class="btn btn-success mb-3">Tambah Siswa dan Pelatih</a>
+        
+        <h3 class="mt-5">Data Siswa</h3>
+        <?php if ($result_students->num_rows > 0): ?>
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -85,22 +63,55 @@ if (!$result) {
                     <th>Aksi</th>
                 </tr>
             </thead>
-            <tbody id="table-body">
-                <?php while($row = $result->fetch_assoc()): ?>
+            <tbody>
+                <?php while($row = $result_students->fetch_assoc()): ?>
                 <tr>
                     <td><?php echo $row['id']; ?></td>
                     <td><?php echo $row['name']; ?></td>
                     <td><?php echo $row['age']; ?></td>
                     <td><img src="<?php echo '../uploads/' . basename($row['photo']); ?>" alt="Foto Siswa" style="width: 100px;"></td>
                     <td>
-                        <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-warning">Edit</a>
-                        <a href="delete.php?id=<?php echo $row['id']; ?>" class="btn btn-danger" onclick="return confirm('Anda yakin ingin menghapus data ini?');">Hapus</a>
+                        <a href="edit.php?id=<?php echo $row['id']; ?>&type=student" class="btn btn-warning">Edit</a>
+                        <a href="delete.php?id=<?php echo $row['id']; ?>&type=student" class="btn btn-danger" onclick="return confirm('Anda yakin ingin menghapus data ini?');">Hapus</a>
                     </td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>
         </table>
-        <a href="logout.php" class="btn btn-secondary">Logout</a>
+        <?php else: ?>
+            <p class="text-center">Tidak ada data siswa yang ditemukan.</p>
+        <?php endif; ?>
+
+        <h3 class="mt-5">Data Pelatih</h3>
+        <?php if ($result_coaches->num_rows > 0): ?>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nama</th>
+                    <th>Posisi</th>
+                    <th>Foto</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while($row = $result_coaches->fetch_assoc()): ?>
+                <tr>
+                    <td><?php echo $row['id']; ?></td>
+                    <td><?php echo $row['name']; ?></td>
+                    <td><?php echo $row['position']; ?></td>
+                    <td><img src="<?php echo '../uploads/' . basename($row['photo']); ?>" alt="Foto Pelatih" style="width: 100px;"></td>
+                    <td>
+                        <a href="edit.php?id=<?php echo $row['id']; ?>&type=coach" class="btn btn-warning">Edit</a>
+                        <a href="delete.php?id=<?php echo $row['id']; ?>&type=coach" class="btn btn-danger" onclick="return confirm('Anda yakin ingin menghapus data ini?');">Hapus</a>
+                    </td>
+                </tr>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
+        <?php else: ?>
+            <p class="text-center">Tidak ada data pelatih yang ditemukan.</p>
+        <?php endif; ?>
     </div>
 </body>
 </html>

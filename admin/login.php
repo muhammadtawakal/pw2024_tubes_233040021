@@ -6,17 +6,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    // Enkripsi kata sandi menggunakan hash
-    $password_hash = md5($password);  // Untuk keamanan yang lebih baik, gunakan password_hash()
-
-    $query = "SELECT * FROM users WHERE username='$username' AND password='$password_hash'";
-    $result = $conn->query($query);
+    $query = $conn->prepare("SELECT * FROM user WHERE username = ?");
+    $query->bind_param('s', $username);
+    $query->execute();
+    $result = $query->get_result();
 
     if ($result->num_rows > 0) {
-        $_SESSION['admin'] = $username;
-        header("Location: index.php");
+        $user = $result->fetch_assoc();
+        if ($password === $user['password']) { // Check password directly
+            $_SESSION['admin'] = $user['username'];
+            header("Location: index.php");
+            exit();
+        } else {
+            echo "Password salah.";
+        }
     } else {
-        echo "<script>alert('Username atau Password salah');</script>";
+        echo "Username tidak ditemukan.";
     }
 }
 ?>
@@ -31,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <body>
     <div class="container mt-5">
         <h2 class="text-center">Login Admin</h2>
-        <form action="login.php" method="POST">
+        <form method="POST">
             <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" class="form-control" id="username" name="username" required>

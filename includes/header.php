@@ -7,19 +7,22 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Home</a>
+                    <a class="nav-link" href="#home">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Tentang Kami</a>
+                    <a class="nav-link" href="#tentang">Tentang Kami</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Sejarah</a>
+                    <a class="nav-link" href="#sejarah">Sejarah</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Pelatih</a>
+                    <a class="nav-link" href="#pelatih">Pelatih</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="admin/login.php">Login Admin</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="admin/register.php">Register</a>
                 </li>
             </ul>
         </div>

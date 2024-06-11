@@ -6,12 +6,29 @@ if (!isset($_SESSION['admin'])) {
 }
 include '../includes/db.php';
 
-$id = $_GET['id'];
-$query = "DELETE FROM students WHERE id='$id'";
-if ($conn->query($query) === TRUE) {
-    echo "<script>alert('Siswa berhasil dihapus!');</script>";
-    header("Location: index.php");
+if (isset($_GET['id']) && isset($_GET['type'])) {
+    $id = $_GET['id'];
+    $type = $_GET['type'];
+
+    if ($type == 'student') {
+        $query = "DELETE FROM students WHERE id=?";
+    } elseif ($type == 'coach') {
+        $query = "DELETE FROM coaches WHERE id=?";
+    } else {
+        die("Tipe tidak valid.");
+    }
+
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $id);
+
+    if ($stmt->execute()) {
+        echo "<script>alert('Data berhasil dihapus!');</script>";
+        header("Location: index.php");
+        exit();
+    } else {
+        echo "<script>alert('Gagal menghapus data: " . $conn->error . "');</script>";
+    }
 } else {
-    echo "<script>alert('Gagal menghapus siswa: " . $conn->error . "');</script>";
+    die("ID tidak valid.");
 }
 ?>
